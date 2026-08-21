@@ -149,11 +149,9 @@ aws-admin-toolkit/
 ├── README.md
 │
 ├── aws_utils/
-│   ├── __init__.py
 │   └── session.py
 │
 └── modules/
-    ├── __init__.py
     └── ec2_inventory.py
 ```
 
