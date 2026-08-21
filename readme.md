@@ -216,7 +216,7 @@ aws --version
 ## 1. Clone the Repository
 
 ```bash
-git clone <YOUR-REPOSITORY-URL>
+git clone <https://github.com/Rabih21/aws-admin-toolkit.git>
 ```
 
 Move into the project directory:
