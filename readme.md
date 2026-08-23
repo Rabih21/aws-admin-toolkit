@@ -4,7 +4,7 @@ A modular **Python + Boto3 toolkit for AWS cloud administrators** that simplifie
 
 The goal of this project is to provide cloud administrators with a single command-line toolkit instead of relying on multiple individual scripts or manually checking resources through the AWS Management Console.
 
-> **Project Status:** 🚧 Active Development — v0.1
+> **Project Status:** 🚧 Active Development — v0.2
 
 ---
 
@@ -30,9 +30,9 @@ The project uses the **AWS SDK for Python (Boto3)** to communicate directly with
 
 ---
 
-# 🚀 Current Version — v0.1
+# 🚀 Current Version — v0.2
 
-The first version establishes the foundation of the toolkit.
+The current version includes the foundation of the toolkit, the EC2 Inventory Reporter, and the Security Group Exposure Scanner.
 
 ### ✅ Currently Implemented
 
@@ -95,6 +95,50 @@ SECURITY GROUPS
 
 ---
 
+### 🛡️ Module 2 — Security Group Exposure Scanner
+
+The Security Group Exposure Scanner analyzes inbound rules across Security Groups in the configured AWS region.
+
+It detects public exposure through:
+
+* `0.0.0.0/0`
+* `::/0`
+
+Each public rule is classified as:
+
+* `CRITICAL` — Dangerous service publicly exposed
+* `WARNING` — Other public port requiring review
+* `INFO` — Common public service such as HTTP/HTTPS
+
+Currently detected critical services:
+
+| Port | Service              |
+| ---: | -------------------- |
+|   22 | SSH                  |
+| 3389 | RDP                  |
+| 3306 | MySQL                |
+| 5432 | PostgreSQL           |
+| 1433 | Microsoft SQL Server |
+| 6379 | Redis                |
+
+The scanner also detects Security Groups allowing all traffic from the public internet.
+
+Each finding includes:
+
+* Security Group name and ID
+* VPC ID
+* Protocol
+* Port / port range
+* Public source
+* Severity
+* Service
+* Finding description
+* Recommended remediation
+
+The scanner generates a final summary showing the number of Critical, Warning, and Informational findings.
+
+---
+
 # 🛠️ Planned Utilities
 
 The project will gradually expand into a complete AWS administration toolkit.
@@ -110,7 +154,7 @@ The project will gradually expand into a complete AWS administration toolkit.
 
 ### 🔐 Security & IAM
 
-* [ ] Security Group Exposure Scanner
+* [x] Security Group Exposure Scanner
 * [ ] IAM User Security Audit Tool
 * [ ] IAM Credential & Access Key Auditor
 * [ ] Public S3 Bucket Security Scanner
@@ -152,7 +196,8 @@ aws-admin-toolkit/
 │   └── session.py
 │
 └── modules/
-    └── ec2_inventory.py
+    ├── ec2_inventory.py
+    └── security_groups.py
 ```
 
 ### File Responsibilities
@@ -185,6 +230,20 @@ Contains the EC2 inventory logic.
 
 It communicates with the EC2 API and converts AWS responses into structured Python data that can later be used by terminal reports, JSON, CSV, or HTML dashboards.
 
+**`modules/security_groups.py`**
+
+Contains the Security Group exposure scanning logic.
+
+It:
+
+* Retrieves Security Groups from the configured AWS region
+* Analyzes inbound Security Group rules
+* Detects public IPv4 exposure using `0.0.0.0/0`
+* Detects public IPv6 exposure using `::/0`
+* Identifies dangerous publicly exposed services
+* Classifies findings as `CRITICAL`, `WARNING`, or `INFO`
+* Generates security recommendations for detected findings
+
 ---
 
 # ⚙️ Requirements
@@ -216,7 +275,7 @@ aws --version
 ## 1. Clone the Repository
 
 ```bash
-git clone <https://github.com/Rabih21/aws-admin-toolkit.git>
+git clone https://github.com/Rabih21/aws-admin-toolkit.git
 ```
 
 Move into the project directory:
@@ -311,7 +370,7 @@ Avoid running the toolkit with the AWS root account.
 
 Create an IAM identity or role with only the permissions required by the utilities you intend to use.
 
-For the current EC2 inventory functionality, the toolkit requires permission to describe EC2 resources.
+For the currently implemented EC2 Inventory Reporter and Security Group Exposure Scanner, the toolkit requires permission to describe EC2 instances and Security Groups.
 
 For example:
 
@@ -322,7 +381,8 @@ For example:
         {
             "Effect": "Allow",
             "Action": [
-                "ec2:DescribeInstances"
+                "ec2:DescribeInstances",
+                "ec2:DescribeSecurityGroups"
             ],
             "Resource": "*"
         }
@@ -375,7 +435,9 @@ You will then see the main menu:
 Select an option:
 ```
 
-Currently, **EC2 Inventory Reporter** is the first implemented utility.
+Currently, the following utilities are implemented:
+
+### EC2 Inventory Reporter
 
 Select:
 
@@ -384,6 +446,18 @@ Select:
 ```
 
 to generate the EC2 inventory.
+
+### Security Group Exposure Scanner
+
+Select:
+
+```text
+2
+```
+
+to analyze Security Group inbound rules for public exposure and security risks.
+
+The **Unused EBS Volume Detector** (`3`) is planned for the next version.
 
 ---
 
@@ -397,14 +471,14 @@ Instead of placing all AWS functionality inside one large Python script, each AW
                     main.py
                        │
                        ▼
-               AWS Session Manager
+                AWS Session Manager
                        │
           ┌────────────┼────────────┐
           ▼            ▼            ▼
-         EC2          IAM          S3
-      Inventory      Audit        Audit
-          │            │            │
-          └────────────┼────────────┘
+         EC2       Security         Future
+      Inventory     Groups          Modules
+          │            │               │
+          └────────────┼───────────────┘
                        ▼
                     Reports
 ```
@@ -449,26 +523,34 @@ This will allow the same AWS data to be reused for interactive administration, a
 * [x] Interactive CLI
 * [x] EC2 Inventory Reporter
 
-### v0.2 — Security & Storage
+### v0.2 — Security Group Auditing
 
-* [ ] Security Group Exposure Scanner
+* [x] Security Group Exposure Scanner
+* [x] IPv4 public exposure detection
+* [x] IPv6 public exposure detection
+* [x] Dangerous port detection
+* [x] Severity classification
+* [x] Security recommendations
+* [x] Security summary
+
+### v0.3 — Storage & Cost Optimization
+
 * [ ] Unused EBS Volume Detector
-* [ ] Improved error handling
 
-### v0.3 — IAM & Governance
+### v0.4 — IAM & Governance
 
 * [ ] IAM Security Auditor
 * [ ] IAM Credential Auditor
 * [ ] Resource Tag Compliance Auditor
 
-### v0.4 — S3 & Backup
+### v0.5 — S3 & Backup
 
 * [ ] S3 Inventory Auditor
 * [ ] Public S3 Security Scanner
 * [ ] Snapshot Compliance Checker
 * [ ] Backup Verification
 
-### v0.5 — Monitoring & Cost
+### v0.6 — Monitoring & Cost
 
 * [ ] CloudWatch Alarm Health Reporter
 * [ ] Cost Explorer Integration
