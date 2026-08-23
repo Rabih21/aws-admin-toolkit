@@ -1,5 +1,6 @@
 from aws_utils.session import get_aws_session
 from modules.ec2_inventory import get_ec2_inventory
+from modules.security_groups import get_sg_info
 
 
 def print_header():
@@ -73,6 +74,112 @@ def show_ec2_inventory(aws_info):
 
     print("=" * 60)
 
+def show_security_group_report(aws_info):
+
+    session = aws_info["session"]
+    region = aws_info["region"]
+
+    print()
+    print("=" * 60)
+    print("SECURITY GROUP EXPOSURE SCANNER")
+    print("=" * 60)
+
+    print(f"Scanning region: {region}")
+    print()
+
+    findings = get_sg_info(session, region)
+
+    if not findings:
+        print("[SUCCESS] No publicly exposed Security Group rules found.")
+        return
+
+    critical_count = 0
+    warning_count = 0
+    info_count = 0
+
+    for finding in findings:
+
+        severity = finding["severity"]
+
+        if severity == "CRITICAL":
+            critical_count += 1
+
+        elif severity == "WARNING":
+            warning_count += 1
+
+        elif severity == "INFO":
+            info_count += 1
+
+        print("-" * 60)
+
+        print(
+            f"Security Group: {finding['security_group_name']}"
+        )
+
+        print(
+            f"Group ID:       {finding['security_group_id']}"
+        )
+
+        print(
+            f"VPC ID:         {finding['vpc_id']}"
+        )
+
+        print(
+            f"Severity:       [{finding['severity']}]"
+        )
+
+        print(
+            f"Service:        {finding['service']}"
+        )
+
+        print(
+            f"Protocol:       {finding['protocol']}"
+        )
+
+        print(
+            f"Port(s):        "
+            f"{finding['from_port']} - {finding['to_port']}"
+        )
+
+        print(
+            f"Source:         {finding['source']}"
+        )
+
+        print()
+
+        print(
+            f"Finding:        {finding['message']}"
+        )
+
+        print(
+            f"Recommendation: {finding['recommendation']}"
+        )
+
+        print()
+
+    print("=" * 60)
+    print("SECURITY SUMMARY")
+    print("=" * 60)
+
+    print(f"Critical Findings: {critical_count}")
+    print(f"Warnings:          {warning_count}")
+    print(f"Informational:     {info_count}")
+    print(f"Total Findings:    {len(findings)}")
+
+    print()
+
+    if critical_count > 0:
+        overall_status = "CRITICAL"
+
+    elif warning_count > 0:
+        overall_status = "WARNING"
+
+    else:
+        overall_status = "GOOD"
+
+    print(f"Overall Status: {overall_status}")
+
+    print("=" * 60)
 
 def main():
 
@@ -110,11 +217,9 @@ def main():
         if choice == "1":
 
             show_ec2_inventory(aws_info)
-
         elif choice == "2":
 
-            print()
-            print("Security Group Scanner coming next.")
+            show_security_group_report(aws_info)
 
         elif choice == "3":
 
