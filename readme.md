@@ -4,7 +4,7 @@ A modular **Python + Boto3 toolkit for AWS cloud administrators** that simplifie
 
 The goal of this project is to provide cloud administrators with a single command-line toolkit instead of relying on multiple individual scripts or manually checking resources through the AWS Management Console.
 
-> **Project Status:** 🚧 Active Development — v0.2
+> **Project Status:** 🚧 Active Development — v0.2.1
 
 ---
 
@@ -30,9 +30,9 @@ The project uses the **AWS SDK for Python (Boto3)** to communicate directly with
 
 ---
 
-# 🚀 Current Version — v0.2
+# 🚀 Current Version — v0.2.1
 
-The current version includes the foundation of the toolkit, the EC2 Inventory Reporter, and the Security Group Exposure Scanner.
+The current version includes the foundation of the toolkit, the EC2 Inventory Reporter, the Security Group Exposure Scanner, and a standalone Windows executable for easier deployment.
 
 ### ✅ Currently Implemented
 
@@ -139,6 +139,24 @@ The scanner generates a final summary showing the number of Critical, Warning, a
 
 ---
 
+### 🪟 Standalone Windows Executable
+
+Starting with **v0.2.1**, the AWS Admin Utility Toolkit is available as a standalone Windows executable.
+
+Windows users can run the toolkit without:
+
+* Installing Python
+* Installing Boto3 manually
+* Cloning the GitHub repository
+* Creating a Python virtual environment
+* Running Python commands
+
+The executable is distributed through **GitHub Releases** and can be launched directly after downloading.
+
+> **Note:** AWS credentials must currently be configured on the machine before using the toolkit.
+
+---
+
 # 🛠️ Planned Utilities
 
 The project will gradually expand into a complete AWS administration toolkit.
@@ -185,20 +203,28 @@ The project will gradually expand into a complete AWS administration toolkit.
 
 # 📁 Project Structure
 
+The GitHub repository contains the application source code and documentation.
+
 ```text
 aws-admin-toolkit/
-│
-├── main.py
-├── requirements.txt
-├── README.md
 │
 ├── aws_utils/
 │   └── session.py
 │
-└── modules/
-    ├── ec2_inventory.py
-    └── security_groups.py
+├── modules/
+│   ├── ec2_inventory.py
+│   └── security_groups.py
+│
+├── .gitignore
+├── main.py
+├── README.md
+├── requirements.txt
+└── SECURITY.md
 ```
+
+Generated files such as Python cache files, PyInstaller build files, and compiled executables are excluded from the source repository through `.gitignore`.
+
+Standalone executable files are distributed separately through **GitHub Releases**.
 
 ### File Responsibilities
 
@@ -248,7 +274,22 @@ It:
 
 # ⚙️ Requirements
 
-Before using the toolkit, make sure you have:
+Requirements depend on how the toolkit is being used.
+
+## 🪟 Windows Executable
+
+To use the standalone Windows executable, you need:
+
+* Windows
+* An AWS account
+* AWS credentials configured locally
+* Appropriate IAM permissions
+
+Python and Boto3 do **not** need to be installed separately.
+
+## 💻 Running from Source
+
+To run the toolkit directly from the source code, make sure you have:
 
 * Python 3.10+
 * AWS CLI
@@ -272,7 +313,43 @@ aws --version
 
 # 📥 Installation
 
-## 1. Clone the Repository
+There are two ways to use the AWS Admin Utility Toolkit.
+
+## 🪟 Option 1 — Windows Executable (Recommended)
+
+The standalone executable is the easiest way for Windows administrators to use the toolkit.
+
+### 1. Download the Latest Release
+
+Open the repository's **Releases** section and select the latest release.
+
+Download:
+
+```text
+AWS-Admin-Toolkit-v0.2.1.exe
+```
+
+### 2. Run the Toolkit
+
+Double-click:
+
+```text
+AWS-Admin-Toolkit-v0.2.1.exe
+```
+
+The AWS Admin Utility Toolkit will open in a terminal window.
+
+No Python installation, repository cloning, virtual environment, or manual Boto3 installation is required.
+
+> AWS credentials must currently be configured before using AWS operations.
+
+---
+
+## 💻 Option 2 — Install from Source
+
+Developers or users who prefer to run the Python source code can install the toolkit manually.
+
+### 1. Clone the Repository
 
 ```bash
 git clone https://github.com/Rabih21/aws-admin-toolkit.git
@@ -284,29 +361,25 @@ Move into the project directory:
 cd aws-admin-toolkit
 ```
 
----
-
-## 2. Create a Virtual Environment
+### 2. Create a Virtual Environment
 
 Creating a Python virtual environment is recommended.
 
-### Windows
+#### Windows
 
 ```bash
 python -m venv .venv
 .venv\Scripts\activate
 ```
 
-### Linux / macOS
+#### Linux / macOS
 
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
 ```
 
----
-
-## 3. Install Dependencies
+### 3. Install Dependencies
 
 ```bash
 pip install -r requirements.txt
@@ -318,13 +391,21 @@ The current `requirements.txt` contains:
 boto3
 ```
 
+### 4. Run the Toolkit
+
+```bash
+python main.py
+```
+
 ---
 
 # 🔑 AWS Configuration
 
 The toolkit **does not require AWS access keys to be stored inside the source code**.
 
-Configure AWS CLI credentials instead:
+AWS credentials must currently be configured locally before the toolkit is launched.
+
+For users with AWS CLI installed, configure credentials using:
 
 ```bash
 aws configure
@@ -396,11 +477,25 @@ As additional modules are introduced, their required permissions will be documen
 
 # ▶️ Running the Toolkit
 
-Start the program with:
+## Windows Executable
+
+After downloading the standalone Windows release, double-click:
+
+```text
+AWS-Admin-Toolkit-v0.2.1.exe
+```
+
+No Python command is required.
+
+## Running from Source
+
+If you cloned the repository, run:
 
 ```bash
 python main.py
 ```
+
+Both methods launch the same AWS Admin Utility Toolkit interface.
 
 The toolkit will attempt to authenticate with AWS.
 
@@ -533,6 +628,14 @@ This will allow the same AWS data to be reused for interactive administration, a
 * [x] Security recommendations
 * [x] Security summary
 
+### v0.2.1 — Windows Standalone Release
+
+* [x] Package the toolkit as a standalone Windows executable
+* [x] Bundle the Python runtime and required dependencies
+* [x] Publish the executable through GitHub Releases
+* [x] Test the executable outside the project directory
+* [x] Allow Windows users to run the toolkit without installing Python
+
 ### v0.3 — Storage & Cost Optimization
 
 * [ ] Unused EBS Volume Detector
@@ -590,6 +693,8 @@ If you would like to contribute:
 5. Submit a pull request
 
 When adding a new AWS utility, keep the project modular and avoid hardcoding AWS credentials, account IDs, regions, or resource identifiers.
+
+Generated files such as `build/`, `dist/`, `__pycache__/`, and PyInstaller `.spec` files should not be committed to the source repository.
 
 ---
 
