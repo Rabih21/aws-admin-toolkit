@@ -1,10 +1,13 @@
+Of course. Below is the **complete README rewritten for the current v0.2.2**, while keeping the structure we've been using and only incorporating the changes we actually implemented: the Windows `.exe` from v0.2.1 and the new first-time AWS credential configuration from v0.2.2.
+
+````markdown
 # AWS Admin Utility Toolkit
 
 A modular **Python + Boto3 toolkit for AWS cloud administrators** that simplifies common AWS operational, inventory, security, monitoring, compliance, and cost-management tasks.
 
 The goal of this project is to provide cloud administrators with a single command-line toolkit instead of relying on multiple individual scripts or manually checking resources through the AWS Management Console.
 
-> **Project Status:** 🚧 Active Development — v0.2.1
+> **Project Status:** 🚧 Active Development — v0.2.2
 
 ---
 
@@ -30,25 +33,42 @@ The project uses the **AWS SDK for Python (Boto3)** to communicate directly with
 
 ---
 
-# 🚀 Current Version — v0.2.1
+# 🚀 Current Version — v0.2.2
 
-The current version includes the foundation of the toolkit, the EC2 Inventory Reporter, the Security Group Exposure Scanner, and a standalone Windows executable for easier deployment.
+The current version includes:
 
-### ✅ Currently Implemented
+* AWS Authentication & Session Management
+* EC2 Inventory Reporter
+* Security Group Exposure Scanner
+* Standalone Windows executable
+* Built-in first-time AWS credential configuration
 
-#### AWS Authentication & Session Management
+Windows administrators can download the standalone executable, launch it directly, configure AWS credentials from inside the toolkit if necessary, and begin using the available administration utilities without installing Python or cloning the repository.
+
+---
+
+# ✅ Currently Implemented
+
+## 🔑 AWS Authentication & Session Management
 
 The toolkit:
 
 * Creates an AWS session using Boto3
-* Uses locally configured AWS credentials
+* Detects existing AWS credentials
 * Validates authentication using AWS STS
 * Retrieves the AWS Account ID
 * Displays the authenticated IAM identity
 * Detects the configured AWS region
-* Handles missing or incomplete AWS credentials
+* Handles missing credentials
+* Handles incomplete credentials
+* Detects invalid or expired credentials
+* Provides interactive first-time AWS configuration when credentials are missing
+* Validates new credentials before saving them
+* Automatically continues to the toolkit after successful configuration
 
-#### EC2 Inventory Reporter
+---
+
+## 🖥️ Module 1 — EC2 Inventory Reporter
 
 The EC2 Inventory Reporter discovers EC2 instances in the configured AWS region and displays information including:
 
@@ -91,11 +111,11 @@ Launch Time:       2026-08-21 18:00:00+00:00
 SECURITY GROUPS
 
 - WebServer-SG (sg-0123456789)
-```
+````
 
 ---
 
-### 🛡️ Module 2 — Security Group Exposure Scanner
+## 🛡️ Module 2 — Security Group Exposure Scanner
 
 The Security Group Exposure Scanner analyzes inbound rules across Security Groups in the configured AWS region.
 
@@ -139,7 +159,7 @@ The scanner generates a final summary showing the number of Critical, Warning, a
 
 ---
 
-### 🪟 Standalone Windows Executable
+# 🪟 Standalone Windows Executable
 
 Starting with **v0.2.1**, the AWS Admin Utility Toolkit is available as a standalone Windows executable.
 
@@ -153,7 +173,97 @@ Windows users can run the toolkit without:
 
 The executable is distributed through **GitHub Releases** and can be launched directly after downloading.
 
-> **Note:** AWS credentials must currently be configured on the machine before using the toolkit.
+Starting with **v0.2.2**, AWS credentials can also be configured directly from the application when no valid credentials are detected.
+
+This means a first-time Windows user can:
+
+```text
+Download EXE
+     │
+     ▼
+Double-click
+     │
+     ▼
+AWS credentials detected?
+     │
+ ┌───┴───┐
+ │       │
+YES      NO
+ │       │
+ │       ▼
+ │   First-Time Setup
+ │       │
+ │       ├── Access Key ID
+ │       ├── Secret Access Key
+ │       └── AWS Region
+ │
+ │       ▼
+ │   Validate with AWS STS
+ │       │
+ │       ▼
+ │   Save Configuration
+ │       │
+ └───────┴──────► Toolkit Menu
+```
+
+---
+
+# 🔐 First-Time AWS Configuration
+
+Starting with **v0.2.2**, the toolkit automatically detects when AWS credentials are not available.
+
+Instead of requiring the administrator to exit the application and manually configure AWS, the toolkit offers an interactive setup process.
+
+Example:
+
+```text
+============================================================
+              AWS ADMIN UTILITY TOOLKIT
+============================================================
+
+Connecting to AWS...
+
+[WARNING] No AWS credentials were found.
+
+Would you like to configure AWS now? [Y/N]: Y
+
+============================================================
+                 AWS FIRST-TIME SETUP
+============================================================
+
+No valid AWS credentials were found.
+
+Enter your AWS credentials below.
+Credentials will be validated before they are saved.
+
+AWS Access Key ID: AKIA...
+AWS Secret Access Key:
+Default AWS Region [us-east-1]: us-east-1
+
+Testing AWS credentials...
+
+[SUCCESS] AWS credentials verified.
+
+Account ID: 123456789012
+Identity:   arn:aws:iam::123456789012:user/cloud-admin
+Region:     us-east-1
+
+[SUCCESS] AWS configuration saved successfully.
+```
+
+The toolkit then automatically reconnects to AWS and continues to the main menu.
+
+### Security Measures
+
+The first-time configuration process includes several safeguards:
+
+* The Secret Access Key is hidden while being entered
+* Credentials are validated before being saved
+* Validation is performed using AWS STS `GetCallerIdentity`
+* Invalid credentials are not saved
+* Users can retry when credential validation fails
+* Credentials are stored using the standard AWS configuration location
+* Credentials are never hardcoded into the project source code
 
 ---
 
@@ -226,9 +336,11 @@ Generated files such as Python cache files, PyInstaller build files, and compile
 
 Standalone executable files are distributed separately through **GitHub Releases**.
 
-### File Responsibilities
+---
 
-**`main.py`**
+## File Responsibilities
+
+### `main.py`
 
 The main entry point of the application.
 
@@ -238,25 +350,31 @@ It:
 * Displays account information
 * Provides the interactive CLI menu
 * Calls individual AWS utility modules
+* Displays module results and summaries
 
-**`aws_utils/session.py`**
+### `aws_utils/session.py`
 
-Responsible for AWS authentication and session management.
+Responsible for AWS authentication, session management, and first-time configuration.
 
 It:
 
-* Creates the Boto3 session
+* Creates Boto3 sessions
+* Detects existing credentials
 * Validates AWS credentials
-* Uses STS to retrieve account information
-* Returns the session to other modules
+* Uses AWS STS to retrieve account information
+* Detects missing or invalid credentials
+* Provides interactive first-time AWS configuration
+* Validates new credentials before saving
+* Stores valid AWS configuration locally
+* Returns the authenticated session to other modules
 
-**`modules/ec2_inventory.py`**
+### `modules/ec2_inventory.py`
 
 Contains the EC2 inventory logic.
 
 It communicates with the EC2 API and converts AWS responses into structured Python data that can later be used by terminal reports, JSON, CSV, or HTML dashboards.
 
-**`modules/security_groups.py`**
+### `modules/security_groups.py`
 
 Contains the Security Group exposure scanning logic.
 
@@ -282,31 +400,34 @@ To use the standalone Windows executable, you need:
 
 * Windows
 * An AWS account
-* AWS credentials configured locally
+* AWS Access Key ID and Secret Access Key
 * Appropriate IAM permissions
 
-Python and Boto3 do **not** need to be installed separately.
+You do **not** need to separately install:
+
+* Python
+* Boto3
+* AWS CLI
+
+If valid AWS credentials are already configured, the toolkit will automatically use them.
+
+If credentials are not configured, the toolkit will offer to configure them during startup.
+
+---
 
 ## 💻 Running from Source
 
 To run the toolkit directly from the source code, make sure you have:
 
 * Python 3.10+
-* AWS CLI
-* An AWS account
-* AWS credentials configured locally
 * Boto3
+* An AWS account
+* Appropriate IAM permissions
 
 Check your Python installation:
 
 ```bash
 python --version
-```
-
-Check AWS CLI:
-
-```bash
-aws --version
 ```
 
 ---
@@ -326,7 +447,7 @@ Open the repository's **Releases** section and select the latest release.
 Download:
 
 ```text
-AWS-Admin-Toolkit-v0.2.1.exe
+AWS-Admin-Toolkit-v0.2.2.exe
 ```
 
 ### 2. Run the Toolkit
@@ -334,14 +455,40 @@ AWS-Admin-Toolkit-v0.2.1.exe
 Double-click:
 
 ```text
-AWS-Admin-Toolkit-v0.2.1.exe
+AWS-Admin-Toolkit-v0.2.2.exe
 ```
 
 The AWS Admin Utility Toolkit will open in a terminal window.
 
-No Python installation, repository cloning, virtual environment, or manual Boto3 installation is required.
+No Python installation, repository cloning, virtual environment, AWS CLI, or manual Boto3 installation is required.
 
-> AWS credentials must currently be configured before using AWS operations.
+### 3. Configure AWS If Required
+
+If valid AWS credentials are already available, the toolkit will connect automatically.
+
+If no credentials are detected:
+
+```text
+[WARNING] No AWS credentials were found.
+
+Would you like to configure AWS now? [Y/N]:
+```
+
+Select:
+
+```text
+Y
+```
+
+and provide:
+
+* AWS Access Key ID
+* AWS Secret Access Key
+* Default AWS Region
+
+The toolkit will validate the credentials before saving them.
+
+After successful validation, the main application will start automatically.
 
 ---
 
@@ -401,11 +548,39 @@ python main.py
 
 # 🔑 AWS Configuration
 
-The toolkit **does not require AWS access keys to be stored inside the source code**.
+The toolkit uses standard AWS credentials and does **not** require credentials to be hardcoded into the source code.
 
-AWS credentials must currently be configured locally before the toolkit is launched.
+There are two supported ways to configure AWS credentials.
 
-For users with AWS CLI installed, configure credentials using:
+## Option 1 — Built-In Configuration
+
+Starting with **v0.2.2**, the recommended approach for standalone Windows users is the built-in configuration process.
+
+When no credentials are detected, the toolkit asks:
+
+```text
+Would you like to configure AWS now? [Y/N]:
+```
+
+If the user chooses `Y`, the toolkit requests:
+
+```text
+AWS Access Key ID:
+AWS Secret Access Key:
+Default AWS Region [us-east-1]:
+```
+
+The Secret Access Key is hidden while being entered.
+
+The credentials are then tested using AWS STS.
+
+Only valid credentials are saved.
+
+---
+
+## Option 2 — AWS CLI Configuration
+
+Users who already use the AWS CLI can continue configuring AWS manually:
 
 ```bash
 aws configure
@@ -420,28 +595,13 @@ Default region name:
 Default output format:
 ```
 
-For example:
-
-```text
-Default region name: us-east-1
-Default output format: json
-```
-
-Verify that authentication works:
+Verify authentication using:
 
 ```bash
 aws sts get-caller-identity
 ```
 
-A successful response should look similar to:
-
-```json
-{
-    "UserId": "AIDA...",
-    "Account": "123456789012",
-    "Arn": "arn:aws:iam::123456789012:user/cloud-admin"
-}
-```
+The toolkit will automatically use existing valid AWS credentials when available.
 
 ---
 
@@ -473,6 +633,8 @@ For example:
 
 As additional modules are introduced, their required permissions will be documented.
 
+> Avoid creating access keys for the AWS root user. Use an appropriately scoped IAM identity for the toolkit.
+
 ---
 
 # ▶️ Running the Toolkit
@@ -482,10 +644,12 @@ As additional modules are introduced, their required permissions will be documen
 After downloading the standalone Windows release, double-click:
 
 ```text
-AWS-Admin-Toolkit-v0.2.1.exe
+AWS-Admin-Toolkit-v0.2.2.exe
 ```
 
 No Python command is required.
+
+If AWS credentials are missing, the first-time setup process will automatically be offered.
 
 ## Running from Source
 
@@ -497,9 +661,7 @@ python main.py
 
 Both methods launch the same AWS Admin Utility Toolkit interface.
 
-The toolkit will attempt to authenticate with AWS.
-
-Example:
+After successful authentication:
 
 ```text
 ============================================================
@@ -636,6 +798,21 @@ This will allow the same AWS data to be reused for interactive administration, a
 * [x] Test the executable outside the project directory
 * [x] Allow Windows users to run the toolkit without installing Python
 
+### v0.2.2 — First-Time AWS Configuration
+
+* [x] Detect missing AWS credentials
+* [x] Detect invalid or expired credentials
+* [x] Interactive AWS credential configuration
+* [x] AWS Access Key ID configuration
+* [x] Hidden Secret Access Key input
+* [x] AWS region configuration
+* [x] Validate credentials using AWS STS before saving
+* [x] Reject invalid credentials
+* [x] Allow credential configuration retry
+* [x] Save valid AWS configuration locally
+* [x] Automatically continue after successful configuration
+* [x] Support first-time configuration through the standalone Windows executable
+
 ### v0.3 — Storage & Cost Optimization
 
 * [ ] Unused EBS Volume Detector
@@ -670,11 +847,34 @@ This will allow the same AWS data to be reused for interactive administration, a
 
 ---
 
+# 🔒 Security Best Practices
+
+Never hardcode AWS credentials directly into the source code.
+
+Do not commit:
+
+* AWS Access Key IDs
+* AWS Secret Access Keys
+* AWS Session Tokens
+* `.aws/credentials`
+* `.env` files containing credentials
+* `.pem` files
+* SSH private keys
+* Other secrets or authentication tokens
+
+If AWS credentials are accidentally exposed, revoke or rotate them immediately.
+
+Use the **principle of least privilege** when creating IAM identities for the toolkit.
+
+---
+
 # ⚠️ Disclaimer
 
 This project is intended for AWS administration, learning, auditing, and authorized cloud environments.
 
 Only run the toolkit against AWS accounts that you own or are authorized to administer.
+
+The toolkit provides findings and recommendations, but administrators should review results within the context of their own AWS architecture before making infrastructure changes.
 
 Some future modules may analyze resources that could generate AWS costs. Always review AWS pricing and permissions before enabling or modifying cloud resources.
 
@@ -692,7 +892,17 @@ If you would like to contribute:
 4. Test your changes
 5. Submit a pull request
 
-When adding a new AWS utility, keep the project modular and avoid hardcoding AWS credentials, account IDs, regions, or resource identifiers.
+When adding a new AWS utility:
+
+* Keep functionality modular
+* Avoid hardcoding AWS credentials
+* Avoid hardcoding Account IDs
+* Avoid hardcoding regions
+* Avoid hardcoding resource identifiers
+* Handle AWS API errors
+* Document required IAM permissions
+* Prefer structured return data
+* Prefer read-only behavior for auditing utilities
 
 Generated files such as `build/`, `dist/`, `__pycache__/`, and PyInstaller `.spec` files should not be committed to the source repository.
 
@@ -712,4 +922,13 @@ The long-term goal is to turn **AWS Admin Utility Toolkit** into a practical com
 
 > **One Python toolkit to inventory, audit, monitor, secure, optimize, and document an AWS environment.**
 
+The project is designed around a simple idea:
+
+> **Download → Connect → Audit → Understand**
+
 Built with **Python**, **Boto3**, and **AWS**.
+
+```
+
+One important improvement I made here is that the README no longer tells `.exe` users they need **AWS CLI**. With v0.2.2, the standalone application can write the standard AWS credential/config files itself, so requiring AWS CLI would defeat part of the convenience we've just built.
+```
