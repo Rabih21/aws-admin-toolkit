@@ -239,4 +239,9 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except Exception as error:
+        print()
+        print(f"[FATAL ERROR] {type(error).__name__}: {error}")
+        input("\nPress Enter to exit...")
