@@ -4,19 +4,21 @@ A modular **Python + Boto3 toolkit for AWS cloud administrators** that simplifie
 
 The goal of this project is to provide cloud administrators with a single command-line toolkit instead of relying on multiple individual scripts or manually checking resources through the AWS Management Console.
 
-> **Project Status:** 🚧 Active Development — v0.2.2
+> **Project Status:** 🚧 Active Development — v0.3
 
 ---
 
 ## ☁️ About the Project
 
-AWS environments can quickly become difficult to manage as the number of resources, regions, security groups, IAM identities, volumes, buckets, and other services grows.
+AWS environments can quickly become difficult to manage as the number of resources, regions, security groups, IAM identities, volumes, buckets, billing data, and other services grows.
 
 **AWS Admin Utility Toolkit** aims to provide a centralized Python-based interface for performing common cloud administration tasks such as:
 
 * Discovering AWS resources
 * Generating infrastructure inventories
 * Detecting security risks
+* Reviewing AWS costs
+* Identifying high-cost AWS services
 * Finding unused resources
 * Checking IAM security
 * Auditing resource tags
@@ -30,9 +32,9 @@ The project uses the **AWS SDK for Python (Boto3)** to communicate directly with
 
 ---
 
-# 🚀 Current Version — v0.2.2
+# 🚀 Current Version — v0.3
 
-The current version includes the foundation of the toolkit, the EC2 Inventory Reporter, the Security Group Exposure Scanner, standalone Windows executable support, and built-in first-time AWS credential configuration.
+The current development version includes the foundation of the toolkit, the EC2 Inventory Reporter, the Security Group Exposure Scanner, the AWS Billing & Cost Report, standalone Windows executable support, and built-in first-time AWS credential configuration.
 
 ### ✅ Currently Implemented
 
@@ -54,7 +56,9 @@ The toolkit:
 * Saves valid credentials using the standard AWS configuration files
 * Automatically continues to the toolkit after successful configuration
 
-#### EC2 Inventory Reporter
+---
+
+### 📦 Module 1 — EC2 Inventory Reporter
 
 The EC2 Inventory Reporter discovers EC2 instances in the configured AWS region and displays information including:
 
@@ -75,7 +79,6 @@ Example:
 
 ```text
 ------------------------------------------------------------
-
 Name:              Test-Server
 Instance ID:       i-0123456789abcdef0
 State:             running
@@ -119,7 +122,7 @@ Each public rule is classified as:
 Currently detected critical services:
 
 | Port | Service |
-| ---: | -------------------- |
+| ---: | --- |
 | 22 | SSH |
 | 3389 | RDP |
 | 3306 | MySQL |
@@ -142,6 +145,54 @@ Each finding includes:
 * Recommended remediation
 
 The scanner generates a final summary showing the number of Critical, Warning, and Informational findings.
+
+---
+
+### 💰 Module 3 — AWS Billing & Cost Report
+
+The AWS Billing & Cost Report retrieves AWS cost information using AWS Cost Explorer.
+
+The module provides administrators with visibility into current AWS spending without requiring them to manually inspect Cost Explorer through the AWS Management Console.
+
+It currently provides:
+
+* Current month-to-date AWS cost
+* Current billing period
+* Cost grouped by AWS service
+* Currency information
+* Total AWS cost
+* Highest-cost AWS service
+* Service costs sorted from highest to lowest
+
+Example:
+
+```text
+============================================================
+AWS BILLING & COST REPORT
+============================================================
+
+Billing Period: 2026-09-01 to 2026-09-19
+Month-to-Date Cost: USD 10.47
+
+----------------------------------------------------------------------
+COST BY AWS SERVICE
+----------------------------------------------------------------------
+
+AWS Service                                           Cost
+----------------------------------------------------------------------
+Amazon Elastic Compute Cloud - Compute            8.30 USD
+Amazon Simple Storage Service                     1.25 USD
+Amazon Route 53                                   0.50 USD
+AmazonCloudWatch                                  0.42 USD
+----------------------------------------------------------------------
+TOTAL                                             10.47 USD
+
+Top Cost Service: Amazon Elastic Compute Cloud - Compute (8.30 USD)
+```
+
+The Billing & Cost Report uses the AWS Cost Explorer API and the `UnblendedCost` metric.
+
+> **Note:** Month-to-date AWS usage cost does not necessarily represent an unpaid AWS invoice or outstanding payment balance. Invoice and payment information will be handled separately as the billing module evolves.
 
 ---
 
@@ -185,7 +236,10 @@ The project will gradually expand into a complete AWS administration toolkit.
 
 ### 💰 Cost Optimization
 
-* [ ] AWS Cost Explorer Dashboard
+* [x] AWS Billing & Cost Report
+* [ ] AWS Invoice / Payment Information
+* [ ] Previous Month Cost Comparison
+* [ ] Cost Increase Detection
 * [ ] Unused EBS Volume Detector
 * [ ] Orphaned Resource Cleanup Advisor
 
@@ -223,7 +277,8 @@ aws-admin-toolkit/
 │
 └── modules/
     ├── ec2_inventory.py
-    └── security_groups.py
+    ├── security_groups.py
+    └── billing_report.py
 ```
 
 Generated files such as `build/`, `dist/`, `__pycache__/`, and PyInstaller `.spec` files are excluded from the source repository through `.gitignore`.
@@ -278,6 +333,21 @@ It:
 * Classifies findings as `CRITICAL`, `WARNING`, or `INFO`
 * Generates security recommendations for detected findings
 
+**`modules/billing_report.py`**
+
+Contains the AWS billing and cost reporting logic.
+
+It:
+
+* Connects to AWS Cost Explorer
+* Retrieves current month cost information
+* Uses the `UnblendedCost` metric
+* Groups AWS costs by service
+* Calculates total month-to-date cost
+* Sorts services by cost
+* Identifies the highest-cost AWS service
+* Returns structured billing information for reporting
+
 ---
 
 # ⚙️ Requirements
@@ -322,7 +392,9 @@ There are two ways to use the AWS Admin Utility Toolkit.
 
 For Windows users, the standalone executable is the easiest way to use the toolkit.
 
-Open the repository's **Releases** section and download:
+Open the repository's **Releases** section and download the latest published Windows executable.
+
+For example:
 
 ```text
 AWS-Admin-Toolkit-v0.2.2.exe
@@ -450,7 +522,11 @@ Avoid running the toolkit with the AWS root account.
 
 Create an IAM identity or role with only the permissions required by the utilities you intend to use.
 
-For the currently implemented EC2 Inventory Reporter and Security Group Exposure Scanner, the toolkit requires permission to describe EC2 instances and Security Groups.
+The currently implemented modules require permissions to:
+
+* Describe EC2 instances
+* Describe Security Groups
+* Retrieve AWS Cost Explorer cost and usage information
 
 For example:
 
@@ -462,7 +538,8 @@ For example:
             "Effect": "Allow",
             "Action": [
                 "ec2:DescribeInstances",
-                "ec2:DescribeSecurityGroups"
+                "ec2:DescribeSecurityGroups",
+                "ce:GetCostAndUsage"
             ],
             "Resource": "*"
         }
@@ -472,17 +549,15 @@ For example:
 
 As additional modules are introduced, their required permissions will be documented.
 
+> Cost Explorer access may also depend on the AWS account's Billing and Cost Management access configuration.
+
 ---
 
 # ▶️ Running the Toolkit
 
 ### Windows Executable
 
-After downloading the latest Windows release, double-click:
-
-```text
-AWS-Admin-Toolkit-v0.2.2.exe
-```
+After downloading the latest published Windows release, double-click the executable.
 
 If AWS credentials are missing, the toolkit will offer the first-time AWS configuration process automatically.
 
@@ -506,6 +581,7 @@ Example:
 Connecting to AWS...
 
 [SUCCESS] Connected to AWS
+
 Account ID: 123456789012
 Identity:   arn:aws:iam::123456789012:user/cloud-admin
 Region:     us-east-1
@@ -515,12 +591,10 @@ You will then see the main menu:
 
 ```text
 ============================================================
-
 [1] EC2 Inventory Reporter
 [2] Security Group Exposure Scanner
-[3] Unused EBS Volume Detector
+[3] AWS Billing & Cost Report
 [0] Exit
-
 ============================================================
 
 Select an option:
@@ -548,7 +622,15 @@ Select:
 
 to analyze Security Group inbound rules for public exposure and security risks.
 
-The **Unused EBS Volume Detector** (`3`) is planned for the next version.
+### AWS Billing & Cost Report
+
+Select:
+
+```text
+3
+```
+
+to retrieve the current month's AWS costs and display the cost breakdown by AWS service.
 
 ---
 
@@ -559,19 +641,19 @@ The project follows a modular architecture.
 Instead of placing all AWS functionality inside one large Python script, each AWS administration capability is implemented as its own module.
 
 ```text
-                    main.py
-                       │
-                       ▼
+                     main.py
+                        │
+                        ▼
                 AWS Session Manager
-                       │
-          ┌────────────┼────────────┐
-          ▼            ▼            ▼
-         EC2       Security         Future
-      Inventory     Groups          Modules
-          │            │               │
-          └────────────┼───────────────┘
-                       ▼
-                    Reports
+                        │
+          ┌─────────────┼─────────────┐
+          ▼             ▼             ▼
+         EC2         Security       Billing
+      Inventory       Groups        & Cost
+          │             │             │
+          └─────────────┼─────────────┘
+                        ▼
+                      Reports
 ```
 
 This architecture allows new AWS utilities to be added without rewriting the existing application.
@@ -646,28 +728,40 @@ This will allow the same AWS data to be reused for interactive administration, a
 * [x] Automatically continue after successful configuration
 * [x] Support first-time configuration through the standalone Windows executable
 
-### v0.3 — Storage & Cost Optimization
+### v0.3 — Billing & Cost Reporting
+
+* [x] AWS Cost Explorer integration
+* [x] Current month-to-date cost
+* [x] Cost breakdown by AWS service
+* [x] Total cost calculation
+* [x] Highest-cost AWS service detection
+* [ ] AWS invoice / payment information
+* [ ] Previous month comparison
+* [ ] Cost increase detection
+
+### v0.4 — Storage & Cost Optimization
 
 * [ ] Unused EBS Volume Detector
+* [ ] Orphaned Resource Cleanup Advisor
 
-### v0.4 — IAM & Governance
+### v0.5 — IAM & Governance
 
 * [ ] IAM Security Auditor
 * [ ] IAM Credential Auditor
 * [ ] Resource Tag Compliance Auditor
 
-### v0.5 — S3 & Backup
+### v0.6 — S3 & Backup
 
 * [ ] S3 Inventory Auditor
 * [ ] Public S3 Security Scanner
 * [ ] Snapshot Compliance Checker
 * [ ] Backup Verification
 
-### v0.6 — Monitoring & Cost
+### v0.7 — Monitoring & Operations
 
 * [ ] CloudWatch Alarm Health Reporter
-* [ ] Cost Explorer Integration
-* [ ] Orphaned Resource Advisor
+* [ ] AWS Environment Health Dashboard
+* [ ] Daily Operations Report Generator
 
 ### v1.0 — AWS Environment Auditor
 
@@ -675,7 +769,7 @@ This will allow the same AWS data to be reused for interactive administration, a
 * [ ] Environment Health Score
 * [ ] HTML Dashboard
 * [ ] CSV / JSON Export
-* [ ] Daily Operations Reports
+* [ ] Automated Testing & Reporting
 * [ ] AWS Documentation Generator
 
 ---
@@ -685,6 +779,8 @@ This will allow the same AWS data to be reused for interactive administration, a
 This project is intended for AWS administration, learning, auditing, and authorized cloud environments.
 
 Only run the toolkit against AWS accounts that you own or are authorized to administer.
+
+Some modules retrieve AWS billing and cost information. Access to billing data should only be granted to authorized IAM identities.
 
 Some future modules may analyze resources that could generate AWS costs. Always review AWS pricing and permissions before enabling or modifying cloud resources.
 
