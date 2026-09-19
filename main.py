@@ -1,6 +1,10 @@
 from aws_utils.session import get_aws_session
 from modules.ec2_inventory import get_ec2_inventory
 from modules.security_groups import get_sg_info
+from modules.billing_report import (
+    get_billing_report,
+    show_billing_report
+)
 
 
 def print_header():
@@ -74,6 +78,7 @@ def show_ec2_inventory(aws_info):
 
     print("=" * 60)
 
+
 def show_security_group_report(aws_info):
 
     session = aws_info["session"]
@@ -90,7 +95,10 @@ def show_security_group_report(aws_info):
     findings = get_sg_info(session, region)
 
     if not findings:
-        print("[SUCCESS] No publicly exposed Security Group rules found.")
+        print(
+            "[SUCCESS] No publicly exposed "
+            "Security Group rules found."
+        )
         return
 
     critical_count = 0
@@ -113,46 +121,56 @@ def show_security_group_report(aws_info):
         print("-" * 60)
 
         print(
-            f"Security Group: {finding['security_group_name']}"
+            f"Security Group: "
+            f"{finding['security_group_name']}"
         )
 
         print(
-            f"Group ID:       {finding['security_group_id']}"
+            f"Group ID:       "
+            f"{finding['security_group_id']}"
         )
 
         print(
-            f"VPC ID:         {finding['vpc_id']}"
+            f"VPC ID:         "
+            f"{finding['vpc_id']}"
         )
 
         print(
-            f"Severity:       [{finding['severity']}]"
+            f"Severity:       "
+            f"[{finding['severity']}]"
         )
 
         print(
-            f"Service:        {finding['service']}"
+            f"Service:        "
+            f"{finding['service']}"
         )
 
         print(
-            f"Protocol:       {finding['protocol']}"
+            f"Protocol:       "
+            f"{finding['protocol']}"
         )
 
         print(
             f"Port(s):        "
-            f"{finding['from_port']} - {finding['to_port']}"
+            f"{finding['from_port']} - "
+            f"{finding['to_port']}"
         )
 
         print(
-            f"Source:         {finding['source']}"
+            f"Source:         "
+            f"{finding['source']}"
         )
 
         print()
 
         print(
-            f"Finding:        {finding['message']}"
+            f"Finding:        "
+            f"{finding['message']}"
         )
 
         print(
-            f"Recommendation: {finding['recommendation']}"
+            f"Recommendation: "
+            f"{finding['recommendation']}"
         )
 
         print()
@@ -181,6 +199,32 @@ def show_security_group_report(aws_info):
 
     print("=" * 60)
 
+
+def run_billing_report(aws_info):
+
+    session = aws_info["session"]
+
+    print()
+    print("=" * 60)
+    print("AWS BILLING & COST REPORT")
+    print("=" * 60)
+
+    print()
+    print("Retrieving AWS billing information...")
+
+    report = get_billing_report(session)
+
+    if report is None:
+        print()
+        print(
+            "[ERROR] AWS billing information "
+            "could not be retrieved."
+        )
+        return
+
+    show_billing_report(report)
+
+
 def main():
 
     print_header()
@@ -207,24 +251,24 @@ def main():
 
         print("[1] EC2 Inventory Reporter")
         print("[2] Security Group Exposure Scanner")
-        print("[3] Unused EBS Volume Detector")
+        print("[3] AWS Billing & Cost Report")
         print("[0] Exit")
 
         print("=" * 60)
 
-        choice = input("Select an option: ")
+        choice = input("Select an option: ").strip()
 
         if choice == "1":
 
             show_ec2_inventory(aws_info)
+
         elif choice == "2":
 
             show_security_group_report(aws_info)
 
         elif choice == "3":
 
-            print()
-            print("Unused EBS Detector coming next.")
+            run_billing_report(aws_info)
 
         elif choice == "0":
 
@@ -239,9 +283,23 @@ def main():
 
 
 if __name__ == "__main__":
+
     try:
         main()
-    except Exception as error:
+
+    except KeyboardInterrupt:
+
         print()
-        print(f"[FATAL ERROR] {type(error).__name__}: {error}")
+        print()
+        print("Operation cancelled.")
+        print("Goodbye.")
+
+    except Exception as error:
+
+        print()
+        print(
+            f"[FATAL ERROR] "
+            f"{type(error).__name__}: {error}"
+        )
+
         input("\nPress Enter to exit...")
